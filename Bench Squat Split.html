@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Split</title>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Mulish:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0908;
+    --s1: #131210;
+    --s2: #1c1a17;
+    --border: #2e2b26;
+    --text: #ede8e0;
+    --sub: #7a7060;
+    --dim: #3d3830;
+    --heavy: #e8b84b;
+    --medium: #e07840;
+    --light: #5cb890;
+    --acc: #c94030;
+    --neutral: #5a7898;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Mulish', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* HEADER */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+    margin-bottom: 52px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .headline {
+    font-family: 'Teko', sans-serif;
+    font-weight: 600;
+    font-size: clamp(64px, 13vw, 130px);
+    line-height: 0.88;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .headline .line2 { color: var(--heavy); }
+  .headline .line3 {
+    color: var(--sub);
+    font-weight: 300;
+    font-size: 0.45em;
+    letter-spacing: 0.05em;
+    display: block;
+    margin-top: 8px;
+  }
+
+  .header-stats { text-align: right; padding-bottom: 6px; }
+  .stat-pair { margin-bottom: 10px; }
+  .stat-lbl { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sub); margin-bottom: 1px; }
+  .stat-val { font-family: 'Teko', sans-serif; font-weight: 500; font-size: 22px; line-height: 1; letter-spacing: 0.02em; }
+  .stat-val .arrow { color: var(--heavy); font-size: 16px; margin: 0 4px; }
+
+  /* WEEK STRIP */
+  .week-strip {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s 0.08s ease both;
+  }
+
+  .strip-cell {
+    background: var(--s1);
+    border: 1px solid var(--border);
+    padding: 14px 8px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .strip-cell::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: transparent;
+    transition: background 0.2s;
+  }
+
+  .strip-cell:hover { background: var(--s2); }
+  .strip-cell.rest-cell { opacity: 0.4; cursor: default; }
+  .strip-cell.rest-cell:hover { background: var(--s1); }
+
+  .strip-cell.col-heavy::after  { background: var(--heavy); }
+  .strip-cell.col-arms::after   { background: var(--neutral); }
+  .strip-cell.col-medSq::after  { background: var(--medium); }
+  .strip-cell.col-lower::after  { background: var(--acc); }
+  .strip-cell.col-light::after  { background: var(--light); }
+
+  .strip-cell.selected { background: var(--s2); transform: translateY(-1px); }
+  .strip-cell.selected.col-heavy  { border-color: var(--heavy); }
+  .strip-cell.selected.col-arms   { border-color: var(--neutral); }
+  .strip-cell.selected.col-medSq  { border-color: var(--medium); }
+  .strip-cell.selected.col-lower  { border-color: var(--acc); }
+  .strip-cell.selected.col-light  { border-color: var(--light); }
+
+  .strip-day {
+    font-family: 'Teko', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .strip-focus { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); line-height: 1.4; }
+  .strip-cell.col-heavy .strip-focus  { color: var(--heavy); }
+  .strip-cell.col-arms .strip-focus   { color: var(--neutral); }
+  .strip-cell.col-medSq .strip-focus  { color: var(--medium); }
+  .strip-cell.col-lower .strip-focus  { color: var(--acc); }
+  .strip-cell.col-light .strip-focus  { color: var(--light); }
+
+  /* DETAIL */
+  .detail { min-height: 360px; animation: fadeUp 0.6s 0.12s ease both; }
+  .detail-inner { display: none; animation: panelIn 0.3s ease both; }
+  .detail-inner.visible { display: block; }
+
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-dayname { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sub); margin-bottom: 6px; }
+
+  .detail-title {
+    font-family: 'Teko', sans-serif;
+    font-weight: 600;
+    font-size: clamp(36px, 6vw, 60px);
+    line-height: 0.9;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+
+  .t-heavy  { color: var(--heavy); }
+  .t-medium { color: var(--medium); }
+  .t-light  { color: var(--light); }
+  .t-arms   { color: var(--neutral); }
+  .t-lower  { color: var(--acc); }
+  .t-rest   { color: var(--sub); }
+
+  .detail-rationale {
+    max-width: 360px;
+    font-size: 12px;
+    color: var(--sub);
+    line-height: 1.7;
+    text-align: right;
+    font-style: italic;
+  }
+
+  /* SECTIONS */
+  .lift-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px;
+  }
+
+  .lift-sec { background: var(--s1); border: 1px solid var(--border); }
+
+  .lift-sec-head {
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .lift-sec-name {
+    font-family: 'Teko', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .lift-intensity {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+
+  .int-heavy  { background: rgba(232,184,75,0.12);  color: var(--heavy);  border: 1px solid rgba(232,184,75,0.2); }
+  .int-medium { background: rgba(224,120,64,0.12);  color: var(--medium); border: 1px solid rgba(224,120,64,0.2); }
+  .int-light  { background: rgba(92,184,144,0.12);  color: var(--light);  border: 1px solid rgba(92,184,144,0.2); }
+  .int-acc    { background: rgba(201,64,48,0.12);   color: var(--acc);    border: 1px solid rgba(201,64,48,0.2); }
+  .int-neu    { background: rgba(90,120,152,0.12);  color: var(--neutral);border: 1px solid rgba(90,120,152,0.2); }
+
+  /* SET ROWS */
+  .set-list { padding: 4px 0; }
+
+  .set-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 20px;
+    border-bottom: 1px solid rgba(46,43,38,0.6);
+    transition: background 0.12s;
+    gap: 12px;
+  }
+
+  .set-item:last-child { border-bottom: none; }
+  .set-item:hover { background: var(--s2); }
+  .set-item.warmup-row { opacity: 0.5; }
+  .set-item.warmup-row:hover { opacity: 0.75; background: var(--s2); }
+  .set-item.divider-row { background: rgba(46,43,38,0.3); cursor: default; }
+  .set-item.divider-row:hover { background: rgba(46,43,38,0.3); }
+
+  .set-desc { font-size: 12px; color: var(--text); font-weight: 300; }
+  .set-type { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sub); margin-left: 8px; }
+
+  .set-weight { font-family: 'Teko', sans-serif; font-size: 18px; font-weight: 500; white-space: nowrap; }
+  .w-heavy  { color: var(--heavy); }
+  .w-medium { color: var(--medium); }
+  .w-light  { color: var(--light); }
+  .w-acc    { color: var(--acc); }
+  .w-dim    { color: var(--dim); font-family: 'Mulish', sans-serif; font-size: 12px; font-weight: 300; }
+
+  .divider-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--sub);
+    padding: 6px 20px;
+    background: rgba(20,18,16,0.8);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ACC ROWS */
+  .acc-list { padding: 4px 0; }
+
+  .acc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(46,43,38,0.6);
+    transition: background 0.12s;
+    font-size: 12px;
+    gap: 16px;
+  }
+
+  .acc-item:last-child { border-bottom: none; }
+  .acc-item:hover { background: var(--s2); }
+  .acc-name { color: var(--text); font-weight: 300; }
+  .acc-note { color: var(--sub); font-size: 10px; margin-left: 6px; }
+  .acc-sets { font-family: 'Teko', sans-serif; font-size: 16px; font-weight: 500; color: var(--sub); white-space: nowrap; }
+
+  /* SIMPLE / SPRINT */
+  .simple-panel {
+    background: var(--s1);
+    border: 1px solid var(--border);
+    padding: 32px;
+    font-size: 13px;
+    color: var(--sub);
+    line-height: 1.8;
+  }
+
+  .simple-panel strong { color: var(--text); font-weight: 400; }
+
+  .sprint-row-display {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sprint-row-display:last-child { border-bottom: none; }
+
+  .sprint-dist-big { font-family: 'Teko', sans-serif; font-weight: 600; font-size: 32px; color: var(--light); width: 80px; }
+  .sprint-info { flex: 1; font-size: 12px; color: var(--sub); }
+  .sprint-count { font-family: 'Teko', sans-serif; font-size: 22px; color: var(--text); }
+
+  .default-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    border: 1px solid var(--border);
+    background: var(--s1);
+    color: var(--sub);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* LEGEND */
+  .legend-bar {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .leg-item { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sub); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .header { grid-template-columns: 1fr; }
+    .header-stats { text-align: left; }
+    .detail-head { flex-direction: column; }
+    .detail-rationale { text-align: left; }
+    .strip-focus { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div>
+      <div class="headline">
+        BENCH<br>
+        <span class="line2">+ SQUAT</span>
+        <span class="line3">Strength-First · 5-Day Split · Bulk Phase</span>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pair">
+        <div class="stat-lbl">Bench</div>
+        <div class="stat-val">245 <span class="arrow">→</span> 275+</div>
+      </div>
+      <div class="stat-pair">
+        <div class="stat-lbl">Squat</div>
+        <div class="stat-val">365 <span class="arrow">→</span> 405+</div>
+      </div>
+      <div class="stat-pair">
+        <div class="stat-lbl">Bodyweight</div>
+        <div class="stat-val">170 <span class="arrow">→</span> 180–190</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="week-strip">
+    <div class="strip-cell col-heavy" data-day="monday">
+      <span class="strip-day">Mon</span>
+      <span class="strip-focus">Heavy Bench<br>+ Back</span>
+    </div>
+    <div class="strip-cell col-arms" data-day="tuesday">
+      <span class="strip-day">Tue</span>
+      <span class="strip-focus">Shoulders<br>+ Arms</span>
+    </div>
+    <div class="strip-cell col-medSq" data-day="wednesday">
+      <span class="strip-day">Wed</span>
+      <span class="strip-focus">Heavy Squat<br>Light Bench</span>
+    </div>
+    <div class="strip-cell col-lower" data-day="thursday">
+      <span class="strip-day">Thu</span>
+      <span class="strip-focus">Lower Acc.<br>+ Core</span>
+    </div>
+    <div class="strip-cell col-light" data-day="friday">
+      <span class="strip-day">Fri</span>
+      <span class="strip-focus">Light Squat<br>Med Bench</span>
+    </div>
+    <div class="strip-cell rest-cell" data-day="saturday">
+      <span class="strip-day">Sat</span>
+      <span class="strip-focus">Rest</span>
+    </div>
+    <div class="strip-cell col-light" data-day="sunday">
+      <span class="strip-day">Sun</span>
+      <span class="strip-focus">Sprints</span>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div id="default-msg" class="default-prompt">← Select a day</div>
+
+    <!-- MONDAY -->
+    <div class="detail-inner" id="day-monday">
+      <div class="detail-head">
+        <div>
+          <div class="detail-dayname">Monday</div>
+          <div class="detail-title t-heavy">Heavy Bench<br>+ Back</div>
+        </div>
+        <div class="detail-rationale">Freshest day of the week. Work up to a 1RM on bench then back off to 90% for additional reps. Back work after reinforces the lat tightness critical for bench setup — same session, same muscle connection.</div>
+      </div>
+      <div class="lift-sections">
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Bench</div>
+            <div class="lift-intensity int-heavy">1RM → 90% Back-off</div>
+          </div>
+          <div class="divider-label">Warm-up Ramp</div>
+          <div class="set-list">
+            <div class="set-item warmup-row"><span class="set-desc">Bar × 10 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">—</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">50% × 5 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">120</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">65% × 3 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">160</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">75% × 2 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">185</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">85% × 1 <span class="set-type">build</span></span><span class="set-weight w-dim">210</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">92% × 1 <span class="set-type">build</span></span><span class="set-weight w-dim">225</span></div>
+          </div>
+          <div class="divider-label">Work Sets</div>
+          <div class="set-list">
+            <div class="set-item"><span class="set-desc">1RM attempt <span class="set-type">max</span></span><span class="set-weight w-heavy">245+</span></div>
+            <div class="set-item"><span class="set-desc">90% × reps <span class="set-type">back-off</span></span><span class="set-weight w-medium">220</span></div>
+            <div class="set-item"><span class="set-desc">90% × reps <span class="set-type">back-off</span></span><span class="set-weight w-medium">220</span></div>
+          </div>
+        </div>
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Back</div>
+            <div class="lift-intensity int-neu">Bench Support</div>
+          </div>
+          <div class="acc-list">
+            <div class="acc-item"><span class="acc-name">Lat Pulldown <span class="acc-note">lats — bench arch + tightness</span></span><span class="acc-sets">3–4 × 8–10</span></div>
+            <div class="acc-item"><span class="acc-name">Rows <span class="acc-note">barbell or cable — upper back</span></span><span class="acc-sets">3–4 × 8–10</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TUESDAY -->
+    <div class="detail-inner" id="day-tuesday">
+      <div class="detail-head">
+        <div>
+          <div class="detail-dayname">Tuesday</div>
+          <div class="detail-title t-arms">Shoulders<br>+ Arms</div>
+        </div>
+        <div class="detail-rationale">Chest and legs recovering from Monday. Overhead extension hits triceps for size but not so heavily that it ruins Wednesday's light bench. Side and rear delts get the only direct work they see all week.</div>
+      </div>
+      <div class="lift-sections">
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Shoulders</div>
+            <div class="lift-intensity int-neu">Side + Rear</div>
+          </div>
+          <div class="acc-list">
+            <div class="acc-item"><span class="acc-name">Lateral Raise <span class="acc-note">side delt</span></span><span class="acc-sets">3 × F</span></div>
+            <div class="acc-item"><span class="acc-name">Reverse Fly <span class="acc-note">rear delt</span></span><span class="acc-sets">3 × F</span></div>
+          </div>
+        </div>
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Arms + Forearms</div>
+            <div class="lift-intensity int-neu">Biceps · Triceps · Grip</div>
+          </div>
+          <div class="acc-list">
+            <div class="acc-item"><span class="acc-name">Curls <span class="acc-note">EZ bar or DB</span></span><span class="acc-sets">3 × F</span></div>
+            <div class="acc-item"><span class="acc-name">Overhead Extension <span class="acc-note">triceps long head</span></span><span class="acc-sets">3 × F</span></div>
+            <div class="acc-item"><span class="acc-name">Forearm Curls — Palms Up <span class="acc-note">flexors</span></span><span class="acc-sets">3 × F</span></div>
+            <div class="acc-item"><span class="acc-name">Forearm Curls — Palms Down <span class="acc-note">extensors</span></span><span class="acc-sets">3 × F</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- WEDNESDAY -->
+    <div class="detail-inner" id="day-wednesday">
+      <div class="detail-head">
+        <div>
+          <div class="detail-dayname">Wednesday</div>
+          <div class="detail-title t-medium">Heavy Squat<br>Light Bench</div>
+        </div>
+        <div class="detail-rationale">Legs had Tuesday completely off → heavy squat gets its own dedicated day. Triceps hit Monday heavy and Tuesday overhead extension → light bench is correct. Work up to a 1RM on squat then back off to 90%. Bench stays at 65% — technique and frequency, not effort.</div>
+      </div>
+      <div class="lift-sections">
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Squat</div>
+            <div class="lift-intensity int-heavy">1RM → 90% Back-off</div>
+          </div>
+          <div class="divider-label">Warm-up Ramp</div>
+          <div class="set-list">
+            <div class="set-item warmup-row"><span class="set-desc">Bar × 10 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">—</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">50% × 5 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">185</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">65% × 3 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">240</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">75% × 2 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">275</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">85% × 1 <span class="set-type">build</span></span><span class="set-weight w-dim">310</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">92% × 1 <span class="set-type">build</span></span><span class="set-weight w-dim">335</span></div>
+          </div>
+          <div class="divider-label">Work Sets</div>
+          <div class="set-list">
+            <div class="set-item"><span class="set-desc">1RM attempt <span class="set-type">max</span></span><span class="set-weight w-heavy">365+</span></div>
+            <div class="set-item"><span class="set-desc">90% × reps <span class="set-type">back-off</span></span><span class="set-weight w-medium">330</span></div>
+            <div class="set-item"><span class="set-desc">90% × reps <span class="set-type">back-off</span></span><span class="set-weight w-medium">330</span></div>
+          </div>
+        </div>
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Bench</div>
+            <div class="lift-intensity int-light">Light — 65% × 5×5</div>
+          </div>
+          <div class="divider-label">Warm-up</div>
+          <div class="set-list">
+            <div class="set-item warmup-row"><span class="set-desc">Bar × 10 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">—</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">50% × 5 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">120</span></div>
+          </div>
+          <div class="divider-label">Work Sets</div>
+          <div class="set-list">
+            <div class="set-item"><span class="set-desc">65% × 5 × 5 sets <span class="set-type">work</span></span><span class="set-weight w-light">160</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- THURSDAY -->
+    <div class="detail-inner" id="day-thursday">
+      <div class="detail-head">
+        <div>
+          <div class="detail-dayname">Thursday</div>
+          <div class="detail-title t-lower">Lower Acc.<br>+ Core</div>
+        </div>
+        <div class="detail-rationale">Posterior chain and core work that feeds directly into squat strength and stability. No pressing, no direct tricep work — they rest completely ahead of Friday's medium bench.</div>
+      </div>
+      <div class="lift-sections">
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Lower</div>
+            <div class="lift-intensity int-acc">Posterior Chain</div>
+          </div>
+          <div class="acc-list">
+            <div class="acc-item"><span class="acc-name">RDL / Good Mornings <span class="acc-note">hamstrings + lower back</span></span><span class="acc-sets">3 × 10</span></div>
+            <div class="acc-item"><span class="acc-name">Hip Adductors <span class="acc-note">groin — squat width</span></span><span class="acc-sets">3 × 15</span></div>
+            <div class="acc-item"><span class="acc-name">Hip Abductors <span class="acc-note">knee stability</span></span><span class="acc-sets">3 × 15</span></div>
+            <div class="acc-item"><span class="acc-name">Hip Thrust <span class="acc-note">glutes — squat lockout</span></span><span class="acc-sets">3 × 10</span></div>
+            <div class="acc-item"><span class="acc-name">Calves <span class="acc-note">standing or seated</span></span><span class="acc-sets">4 × F</span></div>
+          </div>
+        </div>
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Core</div>
+            <div class="lift-intensity int-acc">Squat Brace</div>
+          </div>
+          <div class="acc-list">
+            <div class="acc-item"><span class="acc-name">Weighted Plank <span class="acc-note">intra-abdominal pressure</span></span><span class="acc-sets">3 × F</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FRIDAY -->
+    <div class="detail-inner" id="day-friday">
+      <div class="detail-head">
+        <div>
+          <div class="detail-dayname">Friday</div>
+          <div class="detail-title t-light">Light Squat<br>Med Bench</div>
+        </div>
+        <div class="detail-rationale">Legs had Wednesday heavy squat + Thursday lower accessories — most fatigued → light squat. Triceps had Wednesday light bench, Thursday zero pressing — recovered → medium bench. Finish the week with quality reps, not grinding effort.</div>
+      </div>
+      <div class="lift-sections">
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Squat</div>
+            <div class="lift-intensity int-light">Light — 65% × 5×5</div>
+          </div>
+          <div class="divider-label">Warm-up</div>
+          <div class="set-list">
+            <div class="set-item warmup-row"><span class="set-desc">Bar × 10 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">—</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">50% × 5 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">185</span></div>
+          </div>
+          <div class="divider-label">Work Sets</div>
+          <div class="set-list">
+            <div class="set-item"><span class="set-desc">65% × 5 × 5 sets <span class="set-type">work</span></span><span class="set-weight w-light">240</span></div>
+          </div>
+        </div>
+
+        <div class="lift-sec">
+          <div class="lift-sec-head">
+            <div class="lift-sec-name">Bench</div>
+            <div class="lift-intensity int-medium">Medium — 80% × 4×3</div>
+          </div>
+          <div class="divider-label">Warm-up</div>
+          <div class="set-list">
+            <div class="set-item warmup-row"><span class="set-desc">Bar × 10 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">—</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">50% × 5 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">120</span></div>
+            <div class="set-item warmup-row"><span class="set-desc">65% × 3 <span class="set-type">warm-up</span></span><span class="set-weight w-dim">160</span></div>
+          </div>
+          <div class="divider-label">Work Sets</div>
+          <div class="set-list">
+            <div class="set-item"><span class="set-desc">80% × 3 × 4 sets <span class="set-type">work</span></span><span class="set-weight w-medium">195</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SATURDAY -->
+    <div class="detail-inner" id="day-saturday">
+      <div class="detail-head">
+        <div>
+          <div class="detail-dayname">Saturday</div>
+          <div class="detail-title t-rest">Rest</div>
+        </div>
+        <div class="detail-rationale">Full recovery. This is when adaptation happens. Eat at a surplus, sleep as much as possible.</div>
+      </div>
+      <div class="simple-panel">
+        <strong>Full rest day.</strong> Eat at a surplus. Sleep 8+ hours. Optional light mobility — hip flexors and thoracic spine. No training.
+      </div>
+    </div>
+
+    <!-- SUNDAY -->
+    <div class="detail-inner" id="day-sunday">
+      <div class="detail-head">
+        <div>
+          <div class="detail-dayname">Sunday</div>
+          <div class="detail-title t-light">Sprints</div>
+        </div>
+        <div class="detail-rationale">Treated as a light leg stimulus — primes legs heading into Monday's fresh start. Full recovery between every rep. Eat back the calories.</div>
+      </div>
+      <div class="simple-panel">
+        <div class="sprint-row-display">
+          <div class="sprint-dist-big">50m</div>
+          <div class="sprint-info">Max effort. Walk back fully before next rep.</div>
+          <div class="sprint-count">3 sets</div>
+        </div>
+        <div class="sprint-row-display">
+          <div class="sprint-dist-big">100m</div>
+          <div class="sprint-info">Max effort. Full recovery between reps.</div>
+          <div class="sprint-count">2 sets</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend-bar">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--heavy)"></div>Heavy — 1RM + 90% back-off</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--medium)"></div>Medium — 80% × 4×3</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--light)"></div>Light — 65% × 5×5</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--neutral)"></div>Shoulders + Arms</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--acc)"></div>Lower Acc. + Core</div>
+  </div>
+
+</div>
+
+<script>
+  const allCells = document.querySelectorAll('.strip-cell');
+  const allPanels = document.querySelectorAll('.detail-inner');
+  const defaultMsg = document.getElementById('default-msg');
+
+  allCells.forEach(cell => {
+    cell.addEventListener('click', () => {
+      selectDay(cell.dataset.day);
+    });
+  });
+
+  function selectDay(day) {
+    allCells.forEach(c => c.classList.remove('selected'));
+    const target = document.querySelector(`[data-day="${day}"]`);
+    if (target) target.classList.add('selected');
+    defaultMsg.style.display = 'none';
+    allPanels.forEach(p => p.classList.remove('visible'));
+    const panel = document.getElementById(`day-${day}`);
+    if (panel) panel.classList.add('visible');
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(() => selectDay('monday'), 400);
+  });
+</script>
+</body>
+</html>
